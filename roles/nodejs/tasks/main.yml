@@ -61,5 +61,5 @@
     - name: Schedule S3 Backup
       cron:
         minute: '10'
-        job: aws s3 cp /home/ec2-user/app/access.log s3://nodejs-backup/$(hostname)-$(date +"%Y%m%d%H%M")-access.log
+        job: . $HOME/.bash_profile; aws s3 cp /home/ec2-user/app/access.log s3://nodejs-backup/$(hostname).log
         user: ec2-user
