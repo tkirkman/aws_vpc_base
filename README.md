@@ -43,8 +43,8 @@ export AWS_SECRET_ACCESS_KEY=XXXXXXXXXXXX
 
 1.) Clone the repo and cd into it.
   ```
-  git clone 
-  cd dir_name
+  git clone https://github.com/tkirkman/aws_vpc_base/
+  cd aws_vpc_base
 
   ```
 2.) Run the below command to create the S3 bucket and Lambda function.
