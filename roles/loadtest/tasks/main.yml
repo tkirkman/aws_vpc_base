@@ -1,0 +1,12 @@
+---
+    - name: Install Loadtest
+      npm:
+        name: loadtest
+        state: present
+        global: yes
+   
+    - name: Schedule Loadtest to Run Hourly
+      cron:
+        minute: '0'
+        job: loadtest -n 5 -c 2 http://localhost
+        user: ec2-user

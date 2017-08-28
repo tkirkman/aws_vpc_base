@@ -1,0 +1,273 @@
+Parameters: 
+  KeyName: 
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair
+
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: m1.small
+    AllowedValues : [ m1.small, m1.medium ]
+    ConstraintDescription: must be a valid EC2 instance type
+                          
+Mappings:
+  RegionMap:
+    us-east-1:
+      AMI: ami-2a69aa47
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: "192.168.0.0/16"
+      Tags: 
+        - Key: Application
+          Value: { "Ref" : "AWS::StackId" }
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: MyVPC
+
+  PublicSubnet1:
+    DependsOn: VPC
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: "192.168.0.0/24"
+      AvailabilityZone: us-east-1a
+      Tags:
+        - Key: Application
+          Value: { "Ref" : "AWS::StackId" }
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: Subnet1
+  
+  PublicSubnet2:
+    DependsOn: VPC
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: "192.168.1.0/24"
+      AvailabilityZone: us-east-1b
+      Tags:
+        - Key: Application
+          Value: { "Ref" : "AWS::StackId" }
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: Subnet2
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Application
+          Value: { "Ref" : "AWS::StackId" }
+
+  GatewayToInternet:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway 
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Application
+          Value: { "Ref" : "AWS::StackId" }
+
+  Route:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayToInternet
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref RouteTable
+  
+  SubnetRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref RouteTable
+
+  NetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Application
+          Value: { "Ref" : "AWS::StackId" }
+
+  ElasticLoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      Subnets:
+      - Ref: PublicSubnet1
+      - Ref: PublicSubnet2
+      Instances:
+      - Ref: Ec2Instance1
+      - Ref: Ec2Instance2
+      - Ref: Ec2Instance3
+      - Ref: Ec2Instance4
+      Listeners:
+      - LoadBalancerPort: '80'
+        InstancePort: '80'
+        Protocol: HTTP
+      HealthCheck:
+        Target: HTTP:80/
+        HealthyThreshold: '3'
+        UnhealthyThreshold: '5'
+        Interval: '30'
+        Timeout: '5'
+
+  IPAddress1:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: "vpc"
+      InstanceId: !Ref Ec2Instance1
+
+  IPAddress2:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: "vpc"
+      InstanceId: !Ref Ec2Instance2
+
+  IPAddress3:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: "vpc"
+      InstanceId: !Ref Ec2Instance3
+
+  IPAddress4:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: "vpc"
+      InstanceId: !Ref Ec2Instance4
+
+  Ec2Instance1:
+   Type: AWS::EC2::Instance
+   Properties:
+    InstanceType: !Ref InstanceType
+    KeyName: !Ref KeyName
+    ImageId: 
+      Fn::FindInMap:
+      - RegionMap
+      - Ref: AWS::Region
+      - AMI
+    NetworkInterfaces: 
+      -
+        DeleteOnTermination: true
+        DeviceIndex: 0
+        GroupSet: 
+          - !Ref InstanceSecurityGroup
+        SubnetId: !Ref PublicSubnet1
+    Tags:
+      - Key: Name
+        Value: Ec2Instance1
+    UserData: 
+      Fn::Base64: !Sub |
+        #!/bin/bash
+         echo "Hello from " > /home/ec2-user/ec2.html
+         hostname >> /home/ec2-user/ec2.html
+
+  Ec2Instance2:
+   Type: AWS::EC2::Instance
+   Properties:
+    InstanceType: !Ref InstanceType
+    KeyName: !Ref KeyName
+    ImageId: 
+      Fn::FindInMap:
+      - RegionMap
+      - Ref: AWS::Region
+      - AMI
+    NetworkInterfaces: 
+      -
+        DeleteOnTermination: true
+        DeviceIndex: 0
+        GroupSet: 
+          - !Ref InstanceSecurityGroup
+        SubnetId: !Ref PublicSubnet2
+    Tags:
+      - Key: Name
+        Value: Ec2Instance2
+    UserData: 
+      Fn::Base64: !Sub |
+        #!/bin/bash
+         echo "Hello from " > /home/ec2-user/ec2.html
+         hostname >> /home/ec2-user/ec2.html
+
+  Ec2Instance3:
+   Type: AWS::EC2::Instance
+   Properties:
+    InstanceType: !Ref InstanceType
+    KeyName: !Ref KeyName
+    ImageId: 
+      Fn::FindInMap:
+      - RegionMap
+      - Ref: AWS::Region
+      - AMI
+    NetworkInterfaces: 
+      -
+        DeleteOnTermination: true
+        DeviceIndex: 0
+        GroupSet: 
+          - !Ref InstanceSecurityGroup
+        SubnetId: !Ref PublicSubnet1
+    Tags:
+      - Key: Name
+        Value: Ec2Instance3
+    UserData: 
+      Fn::Base64: !Sub |
+        #!/bin/bash
+         echo "Hello from " > /home/ec2-user/ec2.html
+         hostname >> /home/ec2-user/ec2.html
+
+  Ec2Instance4:
+   Type: AWS::EC2::Instance
+   Properties:
+    InstanceType: !Ref InstanceType
+    KeyName: !Ref KeyName
+    ImageId: 
+      Fn::FindInMap:
+      - RegionMap
+      - Ref: AWS::Region
+      - AMI
+    NetworkInterfaces: 
+      -
+        DeleteOnTermination: true
+        DeviceIndex: 0
+        GroupSet: 
+          - !Ref InstanceSecurityGroup
+        SubnetId: !Ref PublicSubnet2
+    Tags:
+      - Key: Name
+        Value: Ec2Instance4
+    UserData: 
+      Fn::Base64: !Sub |
+        #!/bin/bash
+         echo "Hello from " > /home/ec2-user/ec2.html
+         hostname >> /home/ec2-user/ec2.html
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable port 22 and 80
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        CidrIp: 0.0.0.0/0
