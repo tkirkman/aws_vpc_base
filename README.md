@@ -5,27 +5,38 @@ The below ansible playbook will create a VPC with associated subnets and EC2 ins
 
 ## Prerequisites:
 
-1.) Install Serverless for Nodejs on your local machine or server
-(npm install -g serverless)
+1.) Install Serverless for Nodejs on your local machine or server 
+
+   (npm install -g serverless)
+
 2.) Install Ansible on your local machine or server
+
 http://docs.ansible.com/ansible/latest/intro_installation.html
+
 3.) Add AWS Variables to your ENV
+
 export AWS_ACCESS_KEY_ID=XXXXXXXXXXXXX
+
 export AWS_SECRET_ACCESS_KEY=XXXXXXXXXXXX
+
 4.) Create an AWS_USER_NAME and configure in IAM 
+
   (ie USER_NAME ansible)
+  
 5.) Add Neccessary Permissions to IAM user
-  AWSCloudFormationReadOnlyAccess
-  AmazonS3FullAccess
-  AmazonEC2FullAccess
-  AWSLambdaFullAccess
-  IAMReadOnlyAccess
-  In-line Policies:
-    cloudformation: *
-    iam:CreateRole
-    iam:PutRolePolicy
-    iam:DeleteRolePolicy
+  * AWSCloudFormationReadOnlyAccess
+  * AmazonS3FullAccess
+  * AmazonEC2FullAccess
+  * AWSLambdaFullAccess
+  * IAMReadOnlyAccess
+  * In-line Policies:
+      * cloudformation: '*'
+      * iam:CreateRole
+      * iam:PutRolePolicy
+      * iam:DeleteRolePolicy
+      
 6.) Add EC2 key-pair to IAM
+
 7.) Update key_name variable in group_vars/all.yml with your new EC2 key-pair details
 
 ## Steps:
